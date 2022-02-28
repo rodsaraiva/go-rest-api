@@ -1,54 +1,29 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rodsaraiva/go-rest-api/domain"
+	"github.com/rodsaraiva/go-rest-api/service"
 )
-
-type Customer struct {
-	Name    string `json:"fullname"`
-	City    string `json:"city"`
-	Zipcode string `json:"zip_code"`
-}
 
 func Start() {
 
 	router := mux.NewRouter()
 
-	// GET /greet
-	router.HandleFunc("/greet", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Hello World!!")
-	}).Methods(http.MethodGet)
+	// wiring
+	handlers := CustomerHandlers{service: service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
 	// GET /customers
-	router.HandleFunc("/customers", func(w http.ResponseWriter, r *http.Request) {
-		customers := []Customer{
-			{Name: "Ashich", City: "New Delhi", Zipcode: "110075"},
-			{Name: "Rob", City: "New Delhi", Zipcode: "110075"},
-		}
+	router.HandleFunc("/customers", handlers.getAllCustomers).Methods(http.MethodGet)
 
-		w.Header().Add("Content-Type", "application/json")
+	// GET /health
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "OK") }).Methods(http.MethodGet)
 
-		json.NewEncoder(w).Encode(customers)
-	}).Methods(http.MethodGet)
-
-	// POST /customers
-	router.HandleFunc("/customers", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Post method received")
-	}).Methods(http.MethodPost)
-
-	// GET /customers/{customer_id:[0-9]+}
-	router.HandleFunc("/customers/{customer_id:[0-9]+}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-
-		fmt.Fprint(w, vars["customer_id"])
-	}).Methods(http.MethodGet)
-
-	//starting server
+	// starting server
 	log.Fatal(http.ListenAndServe("localhost:8000", router))
 
 }
